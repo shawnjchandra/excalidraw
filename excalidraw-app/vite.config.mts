@@ -140,7 +140,8 @@ export default defineConfig(({ mode }) => {
         },
 
         workbox: {
-          // don't precache fonts, locales and separate chunks
+        maximumFileSizeToCacheInBytes: 5 * 1024 * 1024, // Ubah jadi 5 mb untuk cache
+	  // don't precache fonts, locales and separate chunks
           globIgnores: [
             "fonts.css",
             "**/locales/**",
