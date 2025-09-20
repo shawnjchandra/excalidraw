@@ -56,6 +56,7 @@ type _ExcalidrawElementBase = Readonly<{
       bottomRight? : number;
 
     } };
+  cornerLock: boolean;
   roughness: number;
   opacity: number;
   width: number;

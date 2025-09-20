@@ -1510,40 +1510,48 @@ export const actionCustomizeRoundness = register({
           return el;
         }    
         
+        let result = {}
+
         // console.log(" value : "+value)
-        const { roundness } = value;
-        const { type, corners } = roundness;
+        if (value.roundness) {
 
-        console.log(type, corners)
+        
+          const { roundness } = value;
+          const { type, corners } = roundness;
 
-        const defaultValue = type === ROUNDNESS.PROPORTIONAL_RADIUS ? DEFAULT_PROPORTIONAL_RADIUS : DEFAULT_ADAPTIVE_RADIUS;
+          console.log(type, corners)
 
-        let customCorners = {
-          topLeft:  defaultValue,
-          topRight: defaultValue,
-          bottomLeft: defaultValue,
-          bottomRight: defaultValue,
-        }
+          const defaultValue = type === ROUNDNESS.PROPORTIONAL_RADIUS ? DEFAULT_PROPORTIONAL_RADIUS : DEFAULT_ADAPTIVE_RADIUS;
 
-        if (el.roundness?.type === ROUNDNESS.CUSTOMIZED && el.roundness.corners) {
-          customCorners = {
-            topLeft:  corners.topLeft ?? defaultValue,
-            topRight: corners.topRight ?? defaultValue,
-            bottomLeft: corners.bottomLeft ?? defaultValue,
-            bottomRight: corners.bottomRight ?? defaultValue,
+          let customCorners = {
+            topLeft:  defaultValue,
+            topRight: defaultValue,
+            bottomLeft: defaultValue,
+            bottomRight: defaultValue,
           }
-        }
 
-        // console.log(customCorners)
-
-        //Todo: Kode untuk perform aksi gambarnya
-        return newElementWith(el, {
-          roundness:{
-              type: ROUNDNESS.CUSTOMIZED,
-              corners: customCorners,
+          if (el.roundness?.type === ROUNDNESS.CUSTOMIZED && el.roundness.corners) {
+            customCorners = {
+              topLeft:  corners.topLeft ?? defaultValue,
+              topRight: corners.topRight ?? defaultValue,
+              bottomLeft: corners.bottomLeft ?? defaultValue,
+              bottomRight: corners.bottomRight ?? defaultValue,
             }
-          ,
-        });
+          }
+          result = customCorners
+        
+      }
+
+      //Todo: Kode untuk perform aksi gambarnya
+      return newElementWith(el, {
+        roundness:{
+            type: ROUNDNESS.CUSTOMIZED,
+            corners: value.roundness ? result : el.roundness?.corners,
+          }
+        ,
+      });
+
+        
       }),
       appState: {
         ...appState,
@@ -1557,6 +1565,8 @@ export const actionCustomizeRoundness = register({
       getNonDeletedElements(elements),
       appState,
     );
+
+    
 
     const getCurrentCornerValue = (corner : 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight') => {
         return getFormValue(
@@ -1582,7 +1592,30 @@ export const actionCustomizeRoundness = register({
       );
     }
 
-    
+    const getCurrentCornerLockValue = () => {
+        return getFormValue(
+          elements,
+          app,
+          (element) => {
+            console.log(element.cornerLock)
+            return element.cornerLock
+          },
+          (element) => !isArrowElement(element) && element.hasOwnProperty("roundness"),
+          (hasSelection) => hasSelection ? null : false
+        )
+    }
+
+    const [ lock, setLock ] = useState(getCurrentCornerLockValue());
+
+    const updateCornerLockValue = () => {
+      setLock(!getCurrentCornerLockValue())
+      console.log(getCurrentCornerLockValue())
+
+      updateData({
+        cornerLock: !getCurrentCornerLockValue()
+      }); 
+
+    }
 
     const updateCornersValue = (corner: 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight', newValue: number) => {
 
@@ -1604,71 +1637,153 @@ export const actionCustomizeRoundness = register({
 
       // updateData("TEST");
 
+
     console.log(currentCorners);
   };
+
+    
 
     return (
     // Todo: Bikin fieldsetnya, dan masing - masing valuenya (setiap onChange di input ,harus bisa regenerate)
       <fieldset>
       <legend>{t("labels.custom")}</legend>
-      <div className="corner-inputs" style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr 1fr',
-        gap: '8px',
-        padding: '8px 0',
-        width: '100%'
-      }}>
-        <input
-          type="number"
-          placeholder={t("labels.topLeft")}
-          value={getCurrentCornerValue('topLeft') ?? ''}
-          onChange={(e) => {
-            const val = parseInt(e.target.value) | 0;
-            updateCornersValue('topLeft', val)
+      <div>
+        <button
+          onClick={() => {
+            updateCornerLockValue()
           }}
-          style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
-          min={0}
-        />
-        <input
-          type="number"
-          placeholder={t("labels.topRight")}
-          value={getCurrentCornerValue('topRight') ?? ''}
-          onChange={(e) => {
-            const val = parseInt(e.target.value) | 0;
-            updateCornersValue('topRight', val)
-
-
-
-          }}
-          style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
-          min={0}
-        />
-        <input
-          type="number"
-          placeholder={ t("labels.bottomLeft")}
-          value={getCurrentCornerValue('bottomLeft') ?? ''}
-          onChange={(e) => {
-            const val = parseInt(e.target.value) | 0;
-            updateCornersValue('bottomLeft', val)
-
-
-          }}
-          style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
-          min={0}
-        />
-        <input
-          type="number"
-          placeholder={t("labels.bottomRight")}
-          value={getCurrentCornerValue('bottomRight') ?? ''}
-          onChange={(e) => {
-            const val = parseInt(e.target.value) | 0;
-            updateCornersValue('bottomRight', val)
-
-          }}
-          style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
-          min={0}
-        />
+        >
+          { lock ? "Unlock" : "Lock" }
+        </button>
       </div>
+      {
+        lock ? 
+        <>
+          <div className="corner-inputs" style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '8px',
+            padding: '8px 0',
+            width: '100%'
+          }}>
+            <input
+              type="number"
+              placeholder={t("labels.topLeft")}
+              value={getCurrentCornerValue('topLeft') ?? ''}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) | 0;
+                updateCornersValue('topLeft', val)
+              }}
+              style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
+              min={0}
+              disabled
+            />
+            <input
+              type="number"
+              placeholder={t("labels.topRight")}
+              value={getCurrentCornerValue('topRight') ?? ''}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) | 0;
+                updateCornersValue('topRight', val)
+
+
+
+              }}
+              style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
+              min={0}
+              disabled
+            />
+            <input
+              type="number"
+              placeholder={ t("labels.bottomLeft")}
+              value={getCurrentCornerValue('bottomLeft') ?? ''}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) | 0;
+                updateCornersValue('bottomLeft', val)
+
+
+              }}
+              style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
+              min={0}
+              disabled
+            />
+            <input
+              type="number"
+              placeholder={t("labels.bottomRight")}
+              value={getCurrentCornerValue('bottomRight') ?? ''}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) | 0;
+                updateCornersValue('bottomRight', val)
+
+              }}
+              style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
+              min={0}
+              disabled
+            />
+          </div>
+        </>
+        :
+        <>
+          <div className="corner-inputs" style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr',
+            gap: '8px',
+            padding: '8px 0',
+            width: '100%'
+          }}>
+            <input
+              type="number"
+              placeholder={t("labels.topLeft")}
+              value={getCurrentCornerValue('topLeft') ?? ''}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) | 0;
+                updateCornersValue('topLeft', val)
+              }}
+              style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
+              min={0}
+            />
+            <input
+              type="number"
+              placeholder={t("labels.topRight")}
+              value={getCurrentCornerValue('topRight') ?? ''}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) | 0;
+                updateCornersValue('topRight', val)
+
+
+
+              }}
+              style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
+              min={0}
+            />
+            <input
+              type="number"
+              placeholder={ t("labels.bottomLeft")}
+              value={getCurrentCornerValue('bottomLeft') ?? ''}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) | 0;
+                updateCornersValue('bottomLeft', val)
+
+
+              }}
+              style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
+              min={0}
+            />
+            <input
+              type="number"
+              placeholder={t("labels.bottomRight")}
+              value={getCurrentCornerValue('bottomRight') ?? ''}
+              onChange={(e) => {
+                const val = parseInt(e.target.value) | 0;
+                updateCornersValue('bottomRight', val)
+
+              }}
+              style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
+              min={0}
+            />
+          </div>
+        </>
+      }
     </fieldset>
     );
   },
