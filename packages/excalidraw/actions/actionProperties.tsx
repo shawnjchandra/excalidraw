@@ -1597,7 +1597,6 @@ export const actionCustomizeRoundness = register({
           elements,
           app,
           (element) => {
-            console.log(element.cornerLock)
             return element.cornerLock
           },
           (element) => !isArrowElement(element) && element.hasOwnProperty("roundness"),
@@ -1608,16 +1607,39 @@ export const actionCustomizeRoundness = register({
     const [ lock, setLock ] = useState(getCurrentCornerLockValue());
 
     const updateCornerLockValue = () => {
-      setLock(!getCurrentCornerLockValue())
-      console.log(getCurrentCornerLockValue())
+      setLock(prev => {
+        const newLock = !prev;
+        console.log("locknya:", newLock);
 
-      updateData({
-        cornerLock: !getCurrentCornerLockValue()
-      }); 
+        updateData({
+          cornerLock: newLock,
+        });
 
+        return newLock;
+      });
+    };
+
+
+    //Method untuk mengambil nilai minimum antara width dengan height
+    const getMinimumLength = () => {
+        return getFormValue(
+          elements,
+          app,
+          (element) => {
+            // console.log("Width: "+element.width + " Height: " + element.height)
+            return Math.min(element.width, element.height)
+          },
+          (element) => !isArrowElement(element) && element.hasOwnProperty("roundness"),
+          (hasSelection) => hasSelection ? 0 : 0
+        )
     }
 
+    
     const updateCornersValue = (corner: 'topLeft' | 'topRight' | 'bottomLeft' | 'bottomRight', newValue: number) => {
+        
+        //memastikan bahwa nilai cornernya tidak melebihi nilai minimum dari width atau height (agar objek tidak rusak)
+        let halfMinimumLength = Math.floor(getMinimumLength()/2)
+        if(newValue>halfMinimumLength) newValue = halfMinimumLength
 
         const currentCorners = {
           topLeft: getCurrentCornerValue('topLeft') ?? 0,
@@ -1626,22 +1648,17 @@ export const actionCustomizeRoundness = register({
           bottomRight: getCurrentCornerValue('bottomRight') ?? 0,
         };
 
-      currentCorners[corner] = newValue;
+        
 
-      updateData({
-        roundness: {
-          type: ROUNDNESS.CUSTOMIZED,
-          corners: currentCorners,
-        }
-    });
+        currentCorners[corner] = newValue;
 
-      // updateData("TEST");
-
-
-    console.log(currentCorners);
-  };
-
-    
+        updateData({
+          roundness: {
+            type: ROUNDNESS.CUSTOMIZED,
+            corners: currentCorners,
+          }
+        });
+    };
 
     return (
     // Todo: Bikin fieldsetnya, dan masing - masing valuenya (setiap onChange di input ,harus bisa regenerate)
@@ -1749,9 +1766,6 @@ export const actionCustomizeRoundness = register({
               onChange={(e) => {
                 const val = parseInt(e.target.value) | 0;
                 updateCornersValue('topRight', val)
-
-
-
               }}
               style={{ padding: '4px 8px', width: '100%', boxSizing: 'border-box' }}
               min={0}
