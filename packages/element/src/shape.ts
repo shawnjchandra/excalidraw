@@ -625,27 +625,6 @@ const generateElementShape = (
       let shape: ElementShapes[typeof element.type];
       // this is for rendering the stroke/bg of the embeddable, especially
       // when the src url is not set
-      // console.log(element.roundness?.type)
-      // if (element.roundness?.type === ROUNDNESS.ADAPTIVE_RADIUS) {
-      //   const w = element.width;
-      //   const h = element.height;
-      //   const r = getCornerRadius(Math.min(w, h), element);
-      //   shape = generator.path(
-      //     `M ${r} 0 L ${w - r} 0 Q ${w} 0, ${w} ${r} L ${w} ${
-      //       h - r
-      //     } Q ${w} ${h}, ${w - r} ${h} L ${r} ${h} Q 0 ${h}, 0 ${
-      //       h - r
-      //     } L 0 ${r} Q 0 0, ${r} 0`,
-      //     generateRoughOptions(
-      //       modifyIframeLikeForRoughOptions(
-      //         element,
-      //         isExporting,
-      //         embedsValidationStatus,
-      //       ),
-      //       true,
-      //     ),
-      //   );
-      // }
       if (element.roundness?.type === ROUNDNESS.PROPORTIONAL_RADIUS) {
         shape = generator.rectangle(
           0,
@@ -662,34 +641,26 @@ const generateElementShape = (
           ),
         );
       } 
-      // Kalau pilihan custom
       else {
         const w = element.width;
         const h = element.height;
-        const r = getCornerRadius(Math.min(w, h), element);
-
-        // console.log(element.id, w, h, r)
-
-        const tl = element.roundness?.corners?.topLeft ?? DEFAULT_ADAPTIVE_RADIUS;
-        const tr = element.roundness?.corners?.topRight ?? DEFAULT_ADAPTIVE_RADIUS;
-        const bl = element.roundness?.corners?.bottomLeft ?? DEFAULT_ADAPTIVE_RADIUS;
-        const br = element.roundness?.corners?.bottomRight ?? DEFAULT_ADAPTIVE_RADIUS;
-
-        // Dummy
-        console.log(tl, tr, bl ,br)
-
+        const corners = element.roundness?.corners;
+        // find the minimum length to use to prevent weird overlapping shapes caused by large numbers
+        const halfMinimumLength = Math.min(w, h)/2
+        let tl = Math.min(corners?.topLeft ?? DEFAULT_ADAPTIVE_RADIUS, halfMinimumLength);
+        let tr = Math.min(corners?.topRight ?? DEFAULT_ADAPTIVE_RADIUS, halfMinimumLength);
+        let bl = Math.min(corners?.bottomLeft ?? DEFAULT_ADAPTIVE_RADIUS, halfMinimumLength); 
+        let br = Math.min(corners?.bottomRight ?? DEFAULT_ADAPTIVE_RADIUS, halfMinimumLength);
         shape = generator.path(
-
-          //Todo: Nanti modify untuk bisa menyesuaikan dengan input manualnya
-          `M ${tl} 0`+                     // Pindahin kursor ke posisi awal
-           `L ${w - tr} 0` +                 // Garis atas
-           `Q ${w} 0, ${w} ${tr}` +          // Kurva kanan atas
-           `L ${w} ${h - br}` +              // Garis kanan
-           `Q ${w} ${h}, ${w - br} ${h}` +   // Kurva kanan bawah
-           `L ${bl} ${h}` +                 // Garis bawah
-           `Q 0 ${h}, 0 ${h - bl}` +         // Kurva kiri bawah
-           `L 0 ${tl}` +                     // Garis kiri
-           `Q 0 0, ${tl} 0`,              // Kurva kanan atas
+          `M ${tl} 0`+                    
+           `L ${w - tr} 0` +                 
+           `Q ${w} 0, ${w} ${tr}` +         
+           `L ${w} ${h - br}` +           
+           `Q ${w} ${h}, ${w - br} ${h}` +   
+           `L ${bl} ${h}` +                 
+           `Q 0 ${h}, 0 ${h - bl}` +         
+           `L 0 ${tl}` +                     
+           `Q 0 0, ${tl} 0`,            
           generateRoughOptions(
             modifyIframeLikeForRoughOptions(
               element,
